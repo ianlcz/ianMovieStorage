@@ -1,0 +1,39 @@
+#!/bin/bash
+
+###################################################################
+#Nom du script	: ianRipper                                                           
+#Description	: Ce script permet de ripper des DVD.                                                                                   
+#Auteur       	: Yann Le Coz                                           
+###################################################################
+
+# Définition et initialisation des variables
+DEV='/dev/dvd'
+NAME="$(lsdvd /dev/dvd 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
+title="$(lsdvd /dev/dvd 2>/dev/null | awk 'END{print $3}')"
+
+# Vérification que les paquets requis sont installés
+if ! `command -v lsdvd > /dev/null` && ! `command -v HandBrakeCLI > /dev/null`
+then
+	echo -e "Veuillez installer les paquets:\n  lsdvd\n  handbrake-cli"
+	exit
+elif ! `command -v lsdvd > /dev/null`
+then
+	echo -e "Veuillez installer le paquet:\n  lsdvd"
+	exit
+elif ! `command -v HandBrakeCLI > /dev/null`
+then
+	echo -e "Veuillez installer le paquet:\n  handbrake-cli"
+	exit
+fi
+
+# Vérification qu'un DVD est bien inséré dans le lecteur
+lsdvd '/dev/dvd' > /dev/null 2>&1
+if [ $? != 0 ]
+then
+        echo -e "\nAucune donnée trouvée. Veuillez vous assurer que vous avez inséré un DVD lisible et que votre lecteur optique fonctionne."
+        exit
+fi
+
+echo "Ripping du DVD: ${NAME}"
+HandBrakeCLI -i '/dev/dvd' -o "$NAME".mp4 -s "none" -t $title --audio-lang-list 'fre' --preset 'Super HQ 1080p30 Surround' --two-pass 2>"$NAME".log
+echo "Ripping du DVD ${NAME} terminé."
