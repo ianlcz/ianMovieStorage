@@ -8,8 +8,13 @@
 
 # Définition et initialisation des variables
 DEV='/dev/dvd'
-NAME="$(lsdvd /dev/dvd 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
-title="$(lsdvd /dev/dvd 2>/dev/null | awk 'END{print $3}')"
+name="$(lsdvd $DEV 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
+titleToEncode="$(lsdvd $DEV 2>/dev/null | awk 'END{print $3}')"
+audioCode='fre'
+fileFormat='mp4'
+audioEncoder='copy:dtshd'
+audioMixing='stereo'
+preset='Super HQ 1080p30 Surround'
 
 # Vérification que les paquets requis sont installés
 if ! `command -v lsdvd > /dev/null` && ! `command -v HandBrakeCLI > /dev/null`
@@ -27,13 +32,32 @@ then
 fi
 
 # Vérification qu'un DVD est bien inséré dans le lecteur
-lsdvd '/dev/dvd' > /dev/null 2>&1
+lsdvd $DEV > /dev/null 2>&1
 if [ $? != 0 ]
 then
         echo -e "\nAucune donnée trouvée. Veuillez vous assurer que vous avez inséré un DVD lisible et que votre lecteur optique fonctionne."
         exit
 fi
 
-echo "Ripping du DVD: ${NAME}"
-HandBrakeCLI -i '/dev/dvd' -o "$NAME".mp4 -s "none" -t $title --audio-lang-list 'fre' --preset 'Super HQ 1080p30 Surround' --two-pass 2>"$NAME".log
-echo "Ripping du DVD ${NAME} terminé."
+# Attribution d'une piste audio à chaque code ISO 639-2
+if [ $audioCode = 'eng' ]
+then
+	audio='Anglais'
+elif [ $audioCode = 'spa' ]
+then
+	audio='Espagnol'
+elif [ $audioCode = 'dut' ]
+then
+	audio='Allemand'
+else
+	audio='Français'
+fi
+
+echo -e "Titre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSon encodé:\t$audioEncoder\nMixage audio:\t$audioMixing\n"
+
+HandBrakeCLI -i "$DEV" -o "$name"."$fileFormat" -E "$audioEncoder" -s 'none' -t "$titleToEncode" --audio-lang-list "$audioCode" --mixdown "$audioMixing" --preset "$preset" --two-pass 2>"$name".log
+
+# On supprime le fichier de log
+rm -f "$name".log
+
+echo -e "\nRipping du DVD terminé.\n$HOME/Documents/$name.$fileFormat"
