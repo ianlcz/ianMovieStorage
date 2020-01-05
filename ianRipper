@@ -1,33 +1,65 @@
 #!/bin/bash
 
-###################################################################
+#######################################################################################
 #Nom du script	: ianRipper                                                           
-#Description	: Ce script permet de ripper des DVD.                                                                                   
+#Description	: Ce script conçu avec la distribution Ubuntu permet de ripper des DVD.                                                                                  
 #Auteur       	: Yann Le Coz                                           
-###################################################################
+#######################################################################################
 
 # Définition et initialisation des variables
 DEV='/dev/dvd'
+DEST="$HOME/Vidéos/movies_storage"
 name="$(lsdvd $DEV 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
 titleToEncode="$(lsdvd $DEV 2>/dev/null | awk 'END{print $3}')"
-audioCode='fre'
+audio='fre,eng,spa'
+subtitle='fre'
 fileFormat='mp4'
 audioEncoder='copy:dtshd'
-audioMixing='stereo'
+audioMixing='5point1'
 preset='Super HQ 1080p30 Surround'
+
+# Fonction de rippage de DVD
+function rip_dvd
+{
+	if [ $1 = 'demo' ]
+	then
+		echo -e "\nEncodage en cours, cela peut prendre quelques minutes."
+		if [ $audio = 'fre' ]
+		then
+			HandBrakeCLI -c 02 -i $DEV -o "$DEST/$name"_demo.$fileFormat -E $audioEncoder -s 'none' -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --two-pass 2>"$DEST/$name"_demo.log
+		else
+			HandBrakeCLI -c 02 -i $DEV -o "$DEST/$name"_demo.$fileFormat -E $audioEncoder -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --subtitle-lang-list $subtitle --subtitle-forced $subtitle --two-pass 2>"$DEST/$name"_demo.log
+		fi
+		# On supprime le fichier de log
+		rm -f "$DEST/$name"_demo.log
+		read -ep $'\n''Terminé !'$'\n'""$name"_demo.$fileFormat est dans $DEST/."$'\nVoulez-vous ripper le film en entier ? [O/N]'$'\n> '
+	elif [ $1 = 'entire' ]
+	then
+		echo -e "\nEncodage en cours, cela peut prendre quelques heures."
+		if [ $audio = 'fre' ]
+		then
+			HandBrakeCLI -i $DEV -o "$DEST/$name".$fileFormat -E $audioEncoder -s 'none' -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --two-pass 2>"$DEST/$name".log
+		else
+			HandBrakeCLI -i $DEV -o "$DEST/$name".$fileFormat -E $audioEncoder -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --subtitle-lang-list $subtitle --subtitle-forced $subtitle --two-pass 2>"$DEST/$name".log
+		fi
+		# On supprime le fichier de log
+		rm -f "$DEST/$name".log
+		echo -e "\nTerminé !\n$name.$fileFormat est dans $DEST/.\n\nianRipper by Yann Le Coz"
+	fi
+}
 
 # Vérification que les paquets requis sont installés
 if ! `command -v lsdvd > /dev/null` && ! `command -v HandBrakeCLI > /dev/null`
 then
-	echo -e "Veuillez installer les paquets:\n  lsdvd\n  handbrake-cli"
+	echo -e "\nVeuillez installer les paquets:\n  lsdvd\n  handbrake-cli"
 	exit
 elif ! `command -v lsdvd > /dev/null`
 then
-	echo -e "Veuillez installer le paquet:\n  lsdvd"
+	echo -e "\nVeuillez installer le paquet:\n  lsdvd"
 	exit
 elif ! `command -v HandBrakeCLI > /dev/null`
 then
-	echo -e "Veuillez installer le paquet:\n  handbrake-cli"
+	echo -e "\nVeuillez installer le paquet:\n  handbrake-cli"
 	exit
 fi
 
@@ -35,29 +67,83 @@ fi
 lsdvd $DEV > /dev/null 2>&1
 if [ $? != 0 ]
 then
-        echo -e "\nAucune donnée trouvée. Veuillez vous assurer que vous avez inséré un DVD lisible et que votre lecteur optique fonctionne."
-        exit
+	echo -e "\nAucune donnée trouvée. Veuillez vous assurer que vous avez inséré un DVD lisible et que votre lecteur fonctionne."
+	exit
 fi
 
-# Attribution d'une piste audio à chaque code ISO 639-2
-if [ $audioCode = 'eng' ]
+# Vérification de l'existence du dossier de destination
+if [ ! -d "$DEST" ]
 then
-	audio='Anglais'
-elif [ $audioCode = 'spa' ]
+	echo -e "\n$DEST n'existe pas.\nCréation du dossier."
+	mkdir $DEST
+fi
+
+# Vérification que l'utilisateur n'entre pas de paramètres
+if [ "$#" -ne 0 ]
 then
-	audio='Espagnol'
-elif [ $audioCode = 'dut' ]
-then
-	audio='Allemand'
+	echo "Vous avez entré des paramètres."
+	exit
 else
-	audio='Français'
+	echo -e "\nTitre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSous-titre:\t$subtitle\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+	
+	# Demande à l'utilisateur s'il souhaite modifier des paramètres
+	read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> '
+	while [ -z ${REPLY} ]
+	do
+		read -p '> '
+	done
+	if [ ${REPLY^^} = 'O' ]
+	then
+		read -ep 'Quel paramètre souhaitez-vous changer ?'$'\n> '
+		case $REPLY in
+        'Titre du film')
+			read -p '> Entrez le titre du film: ' name;;
+        'Qualité')
+			read -p '> Entrez la qualité de la vidéo: ' preset;;
+        'Format')
+			read -p '> Entrez le format du fichier: ' fileFormat;;
+		'Piste audio')
+			read -p '> Entrez la piste audio: ' audio;;
+        'Sous-titre')
+			read -p '> Entrez la langue du/des sous-titre(s): ' subtitle;;
+        'Son')
+			read -p "> Entrez l'encodage sonore: " audioEncoder;;
+		'Mixage audio')
+			read -p '> Entrez le mixage audio: ' audioMixing;;
+        *)
+			echo -e '\nParamètre inconnu.\n'
+			exit;;
+		esac
+		echo -e "\nTitre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSous-titre:\t$subtitle\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+	elif [ ${REPLY^^} != 'O' ] && [ ${REPLY^^} != 'N' ]
+	then
+		echo -e "\nOption inconnue.\n"
+		exit
+	fi
 fi
 
-echo -e "Titre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSon encodé:\t$audioEncoder\nMixage audio:\t$audioMixing\n"
-
-HandBrakeCLI -i "$DEV" -o "$name"."$fileFormat" -E "$audioEncoder" -s 'none' -t "$titleToEncode" --audio-lang-list "$audioCode" --mixdown "$audioMixing" --preset "$preset" --two-pass 2>"$name".log
-
-# On supprime le fichier de log
-rm -f "$name".log
-
-echo -e "\nRipping du DVD terminé.\n$HOME/Documents/$name.$fileFormat"
+# Demande à l'utilisateur s'il veut faire un clip de test
+read -p "Voulez-vous faire un clip de test ? [O/N]"$'\n> '
+while [ -z ${REPLY} ]
+do
+	read -p '> '
+done
+if [ ${REPLY^^} = 'O' ]
+then
+	rip_dvd 'demo'
+	if [ ${REPLY^^} = 'O' ]
+	then
+		# On supprime le clip de test
+		rm -f "$DEST/$name"_demo.$fileFormat
+		rip_dvd 'entire'
+	else
+		echo '\nianRipper by Yann Le Coz'
+		exit
+	fi
+elif [ ${REPLY^^} = 'N' ]
+then
+	rip_dvd 'entire'
+else
+	echo -e "\nOption inconnue.\n"
+	exit
+fi
