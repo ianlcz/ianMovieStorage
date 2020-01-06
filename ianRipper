@@ -8,9 +8,10 @@
 
 # Définition et initialisation des variables
 DEV='/dev/dvd'
-DEST="$HOME/Vidéos/movies_storage"
-name="$(lsdvd $DEV 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
-titleToEncode="$(lsdvd $DEV 2>/dev/null | awk 'END{print $3}')"
+DEST="${HOME}/Vidéos/movies_storage"
+reset='O'
+name="$(lsdvd ${DEV} 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
+titleToEncode="$(lsdvd ${DEV} 2>/dev/null | awk 'END{print $3}')"
 audio='fre,eng,spa'
 subtitle='fre'
 fileFormat='mp4'
@@ -18,33 +19,48 @@ audioEncoder='copy:dtshd'
 audioMixing='5point1'
 preset='Super HQ 1080p30 Surround'
 
-# Fonction de rippage de DVD
+# Fonction permettant de ripper les DVD
 function rip_dvd
 {
-	if [ $1 = 'demo' ]
+	if [ $1 = true ]
 	then
 		echo -e "\nEncodage en cours, cela peut prendre quelques minutes."
-		if [ $audio = 'fre' ]
+		if [ ${audio} = 'fre' ]
 		then
-			HandBrakeCLI -c 02 -i $DEV -o "$DEST/$name"_demo.$fileFormat -E $audioEncoder -s 'none' -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --two-pass 2>"$DEST/$name"_demo.log
+			HandBrakeCLI -c 02 -i ${DEV} -o "${DEST}/${name}"_preview.${fileFormat} -E ${audioEncoder} -s 'none' -t ${titleToEncode} --audio-lang-list ${audio} --mixdown ${audioMixing/./point} --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
 		else
-			HandBrakeCLI -c 02 -i $DEV -o "$DEST/$name"_demo.$fileFormat -E $audioEncoder -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --subtitle-lang-list $subtitle --subtitle-forced $subtitle --two-pass 2>"$DEST/$name"_demo.log
+			HandBrakeCLI -c 02 -i ${DEV} -o "${DEST}/${name}"_preview.${fileFormat} -E ${audioEncoder} -t ${titleToEncode} --audio-lang-list ${audio} --mixdown ${audioMixing/./point} --preset "${preset}" --subtitle-lang-list ${subtitle} --subtitle-forced ${subtitle} --two-pass 2>"${DEST}/${name}"_preview.log
 		fi
 		# On supprime le fichier de log
-		rm -f "$DEST/$name"_demo.log
-		read -ep $'\n''Terminé !'$'\n'""$name"_demo.$fileFormat est dans $DEST/."$'\nVoulez-vous ripper le film en entier ? [O/N]'$'\n> '
-	elif [ $1 = 'entire' ]
-	then
+		rm -f "${DEST}/${name}"_preview.log
+		read -ep $'\n''Terminé !'$'\n'""${name}"_preview.${fileFormat} est dans ${DEST}/."$'\n\nVoulez-vous ripper le film en entier ? [O/N]'$'\n> '
+		while [ -z ${REPLY} ]
+		do
+			read -p '> '
+		done
+	else
 		echo -e "\nEncodage en cours, cela peut prendre quelques heures."
-		if [ $audio = 'fre' ]
+		if [ ${audio} = 'fre' ]
 		then
-			HandBrakeCLI -i $DEV -o "$DEST/$name".$fileFormat -E $audioEncoder -s 'none' -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --two-pass 2>"$DEST/$name".log
+			HandBrakeCLI -i ${DEV} -o "${DEST}/${name}".${fileFormat} -E ${audioEncoder} -s 'none' -t ${titleToEncode} --audio-lang-list ${audio} --mixdown ${audioMixing/./point} --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
 		else
-			HandBrakeCLI -i $DEV -o "$DEST/$name".$fileFormat -E $audioEncoder -t $titleToEncode --audio-lang-list $audio --mixdown ${audioMixing/./point} --preset "$preset" --subtitle-lang-list $subtitle --subtitle-forced $subtitle --two-pass 2>"$DEST/$name".log
+			HandBrakeCLI -i ${DEV} -o "${DEST}/${name}".${fileFormat} -E ${audioEncoder} -t ${titleToEncode} --audio-lang-list ${audio} --mixdown ${audioMixing/./point} --preset "${preset}" --subtitle-lang-list ${subtitle} --subtitle-forced ${subtitle} --two-pass 2>"${DEST}/${name}".log
 		fi
-		# On supprime le fichier de log
-		rm -f "$DEST/$name".log
-		echo -e "\nTerminé !\n$name.$fileFormat est dans $DEST/.\n\nianRipper by Yann Le Coz"
+
+		# Suppression le fichier de log
+		rm -f "${DEST}/${name}".log
+		echo -e "\nTerminé !\n${name}.${fileFormat} est dans ${DEST}/.\n\nianRipper by Yann Le Coz"
+	fi
+}
+
+# Fonction attribuant un code ISO 639-2 à une langue
+function assign_language
+{
+	if [ "${#1}" -eq 3 ]
+	then
+		echo "\t$1" | sed 's/fre/Français/g' | sed 's/eng/Anglais/g' | sed 's/spa/Espagnol/g'
+	else
+		echo "\t$1" | sed 's/,/\n\t\t/g' | sed 's/fre/Français/g' | sed 's/eng/Anglais/g' | sed 's/spa/Espagnol/g'
 	fi
 }
 
@@ -64,7 +80,7 @@ then
 fi
 
 # Vérification qu'un DVD est bien inséré dans le lecteur
-lsdvd $DEV > /dev/null 2>&1
+lsdvd ${DEV} > /dev/null 2>&1
 if [ $? != 0 ]
 then
 	echo -e "\nAucune donnée trouvée. Veuillez vous assurer que vous avez inséré un DVD lisible et que votre lecteur fonctionne."
@@ -72,10 +88,10 @@ then
 fi
 
 # Vérification de l'existence du dossier de destination
-if [ ! -d "$DEST" ]
+if [ ! -d "${DEST}" ]
 then
-	echo -e "\n$DEST n'existe pas.\nCréation du dossier."
-	mkdir $DEST
+	echo -e "\n${DEST} n'existe pas.\nCréation du dossier."
+	mkdir ${DEST}
 fi
 
 # Vérification que l'utilisateur n'entre pas de paramètres
@@ -84,66 +100,79 @@ then
 	echo "Vous avez entré des paramètres."
 	exit
 else
-	echo -e "\nTitre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSous-titre:\t$subtitle\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+	echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 	
 	# Demande à l'utilisateur s'il souhaite modifier des paramètres
-	read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> '
-	while [ -z ${REPLY} ]
+	read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> ' PARAM;
+	while [ -z ${PARAM} ]
 	do
 		read -p '> '
 	done
-	if [ ${REPLY^^} = 'O' ]
+	if [ ${PARAM^^} = 'O' ]
 	then
-		read -ep 'Quel paramètre souhaitez-vous changer ?'$'\n> '
-		case $REPLY in
-        'Titre du film')
-			read -p '> Entrez le titre du film: ' name;;
-        'Qualité')
-			read -p '> Entrez la qualité de la vidéo: ' preset;;
-        'Format')
-			read -p '> Entrez le format du fichier: ' fileFormat;;
-		'Piste audio')
-			read -p '> Entrez la piste audio: ' audio;;
-        'Sous-titre')
-			read -p '> Entrez la langue du/des sous-titre(s): ' subtitle;;
-        'Son')
-			read -p "> Entrez l'encodage sonore: " audioEncoder;;
-		'Mixage audio')
-			read -p '> Entrez le mixage audio: ' audioMixing;;
-        *)
-			echo -e '\nParamètre inconnu.\n'
-			exit;;
-		esac
-		echo -e "\nTitre du film:\t$name\nQualité:\t$preset\nFormat:\t\t$fileFormat\nPiste audio:\t$audio\nSous-titre:\t$subtitle\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
-	elif [ ${REPLY^^} != 'O' ] && [ ${REPLY^^} != 'N' ]
+		while [ ${reset^^} = 'O' ]
+		do
+			read -ep 'Quel paramètre souhaitez-vous changer ?'$'\n> ' NAMEPARAM;
+			case ${NAMEPARAM,,} in
+			'titre du film')
+				read -p '> Entrez le titre du film: ' name;;
+			'qualité')
+				read -p '> Entrez la qualité de la vidéo: ' preset;;
+			'format')
+				read -p '> Entrez le format du fichier: ' fileFormat;;
+			'piste audio')
+				read -p '> Entrez la piste audio: ' audio;;
+			'sous-titre')
+				read -p '> Entrez la langue du/des sous-titre(s): ' subtitle;
+				;;
+			'son')
+				read -p "> Entrez l'encodage sonore: " audioEncoder;;
+			'mixage audio')
+				read -p '> Entrez le mixage audio: ' audioMixing;;
+			*)
+				echo -e '\nParamètre inconnu.\n'
+				exit;;
+			esac
+			if [ ${audio} = 'fre' ]
+			then
+				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:\t`assign_language ${audio}`\nSous-titre:\tAucun\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+			else
+				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:\t`assign_language ${audio}`\nSous-titre:\t`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+			fi
+			read -p 'Souhaitez-vous changer un autre paramètre ? [O/N]'$'\n> ' reset;
+		done
+	elif [ ${PARAM^^} != 'O' ] && [ ${PARAM^^} != 'N' ]
 	then
 		echo -e "\nOption inconnue.\n"
 		exit
 	fi
 fi
 
-# Demande à l'utilisateur s'il veut faire un clip de test
-read -p "Voulez-vous faire un clip de test ? [O/N]"$'\n> '
+# Demande à l'utilisateur s'il veut avoir un aperçu de la vidéo
+read -p $'\n'"Voulez-vous un aperçu de la vidéo ? [O/N]"$'\n> '
 while [ -z ${REPLY} ]
 do
 	read -p '> '
 done
 if [ ${REPLY^^} = 'O' ]
 then
-	rip_dvd 'demo'
+	rip_dvd true
 	if [ ${REPLY^^} = 'O' ]
 	then
-		# On supprime le clip de test
-		rm -f "$DEST/$name"_demo.$fileFormat
-		rip_dvd 'entire'
+		# Suppression de l'aperçu de la vidéo
+		if [ -f "${DEST}/${name}"_preview.${fileFormat} ]
+		then
+			rm -f "${DEST}/${name}"_preview.${fileFormat}
+		fi
+		rip_dvd false
 	else
-		echo '\nianRipper by Yann Le Coz'
+		echo -e "\nianRipper by Yann Le Coz"
 		exit
 	fi
 elif [ ${REPLY^^} = 'N' ]
 then
-	rip_dvd 'entire'
+	rip_dvd false
 else
-	echo -e "\nOption inconnue.\n"
+	echo -e '\nOption inconnue.\n'
 	exit
 fi
