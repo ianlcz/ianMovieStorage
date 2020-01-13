@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #######################################################################################
-#Nom du script	: ianRipper                                                           
+#Nom du script	: ianRip                                                        
 #Description	: Ce script conçu avec la distribution Ubuntu permet de ripper des DVD.                                                                                  
 #Auteur       	: Yann Le Coz                                           
 #######################################################################################
@@ -24,7 +24,7 @@ function rip_dvd
 {
 	if [ $1 = true ]
 	then
-		echo -e "\nEncodage en cours, cela peut prendre quelques minutes."
+		echo -e "\nEncodage en cours, cela peut prendre quelques minutes..."
 		if [ "${audio}" = 'fre' ]
 		then
 			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
@@ -33,13 +33,14 @@ function rip_dvd
 		fi
 		# On supprime le fichier de log
 		rm -f "${DEST}/${name}"_preview.log
-		read -ep $'\n''Terminé !'$'\n'""${name}"_preview.${fileFormat} est dans ${DEST}/."$'\n\nVoulez-vous ripper le film en entier ? [O/N]'$'\n> '
+		echo -e "\nTerminé !\n"${name}"_preview.${fileFormat} est dans ${DEST}/.\n";
+		tput bold; read -ep 'Voulez-vous ripper le film en entier ? [O/N]'$'\n> '; tput sgr0;
 		while [ -z "${REPLY}" ]
 		do
-			read -p '> '
+			tput bold; read -p '> '; tput sgr0;
 		done
 	else
-		echo -e "\nEncodage en cours, cela peut prendre quelques heures."
+		echo -e "\nEncodage en cours, cela peut prendre quelques heures..."
 		if [ "${audio}" = 'fre' ]
 		then
 			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
@@ -49,7 +50,8 @@ function rip_dvd
 
 		# Suppression le fichier de log
 		rm -f "${DEST}/${name}".log
-		echo -e "\nTerminé !\n${name}.${fileFormat} est dans ${DEST}/.\n\nianRipper by Yann Le Coz"
+		echo -e "\nEncodage terminé !\n"${name}".${fileFormat} est dans ${DEST}/."
+		tput setab 7; tput setaf 0; echo -e "\nianRip by Yann Le Coz$(tput sgr0)\n";
 	fi
 }
 
@@ -103,10 +105,10 @@ else
 	echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 	
 	# Demande à l'utilisateur s'il souhaite modifier des paramètres
-	read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> ' PARAM;
+	tput bold; read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> ' PARAM; tput sgr0;
 	while [ -z "${PARAM}" ]
 	do
-		read -p '> '
+		tput bold; read -p '> '; tput sgr0;
 	done
 	if [ "${PARAM^^}" = 'O' ]
 	then
@@ -139,20 +141,25 @@ else
 			else
 				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 			fi
-			read -p 'Souhaitez-vous changer un autre paramètre ? [O/N]'$'\n> ' reset;
+			tput bold; read -p 'Souhaitez-vous changer un autre paramètre ? [O/N]'$'\n> ' reset; tput sgr0;
 		done
 	elif [ "${PARAM^^}" != 'O' ] && [ "${PARAM^^}" != 'N' ]
 	then
-		echo -e "\nOption inconnue.\n"
+		tput setaf 1; tput bold; echo -e "\n!! OPTION INCONNUE\n"; tput sgr0;
 		exit
+	fi
+	# Demande à l'utilisateur s'il veut avoir un aperçu de la vidéo
+	if [ "${reset^^}" = 'N' ]
+	then
+		tput bold; read -p $'\n'"Voulez-vous un aperçu de la vidéo ? [O/N]"$'\n> '; tput sgr0;
+	else
+		tput bold; read -p "Voulez-vous un aperçu de la vidéo ? [O/N]"$'\n> '; tput sgr0;
 	fi
 fi
 
-# Demande à l'utilisateur s'il veut avoir un aperçu de la vidéo
-read -p $'\n'"Voulez-vous un aperçu de la vidéo ? [O/N]"$'\n> '
 while [ -z "${REPLY}" ]
 do
-	read -p '> '
+	tput bold; read -p '> '; tput sgr0;
 done
 if [ "${REPLY^^}" = 'O' ]
 then
@@ -166,13 +173,13 @@ then
 		fi
 		rip_dvd false
 	else
-		echo -e "\nianRipper by Yann Le Coz"
+		tput setab 7; tput setaf 0; echo -e "\nianRip by Yann Le Coz$(tput sgr0)\n";
 		exit
 	fi
 elif [ "${REPLY^^}" = 'N' ]
 then
 	rip_dvd false
 else
-	echo -e '\nOption inconnue.\n'
+	tput setaf 1; tput bold; echo -e '\n!! OPTION INCONNUE\n'; tput sgr0;
 	exit
 fi
