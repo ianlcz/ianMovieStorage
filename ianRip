@@ -51,7 +51,7 @@ function rip_dvd
 		# Suppression le fichier de log
 		rm -f "${DEST}/${name}".log
 		echo -e "\nEncodage terminé !\n"${name}".${fileFormat} est dans ${DEST}/."
-		tput setab 7; tput setaf 0; echo -e "\nianRip by Yann Le Coz$(tput sgr0)\n";
+		tput setab 7; tput setaf 0; echo -e "\nianRip was written by Yann Le Coz$(tput sgr0)\n";
 	fi
 }
 
@@ -173,7 +173,7 @@ then
 		fi
 		rip_dvd false
 	else
-		tput setab 7; tput setaf 0; echo -e "\nianRip by Yann Le Coz$(tput sgr0)\n";
+		tput setab 7; tput setaf 0; echo -e "\nianRip was written by Yann Le Coz$(tput sgr0)\n";
 		exit
 	fi
 elif [ "${REPLY^^}" = 'N' ]
