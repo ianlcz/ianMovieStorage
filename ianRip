@@ -13,7 +13,6 @@ reset='O'
 name="$(lsdvd ${DEV} 2>/dev/null | awk 'NR==1 {print $3}' | sed 's/.*/\L&/; s/[a-z]*/\u&/g; s/_/ /g')"
 titleToEncode="$(lsdvd ${DEV} 2>/dev/null | awk 'END{print $3}')"
 audio='fre,eng,spa'
-subtitle='fre'
 fileFormat='mp4'
 audioEncoder='copy:dtshd'
 audioMixing='5point1'
@@ -29,7 +28,7 @@ function rip_dvd
 		then
 			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
 		else
-			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "${subtitle}" --subtitle-forced "${subtitle}" --two-pass 2>"${DEST}/${name}"_preview.log
+			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
 		fi
 		# On supprime le fichier de log
 		rm -f "${DEST}/${name}"_preview.log
@@ -45,7 +44,7 @@ function rip_dvd
 		then
 			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
 		else
-			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "${subtitle}" --subtitle-forced "${subtitle}" --two-pass 2>"${DEST}/${name}".log
+			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
 		fi
 
 		# Suppression le fichier de log
@@ -102,7 +101,7 @@ then
 	echo "Vous avez entré des paramètres."
 	exit 1
 else
-	echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+	echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 	
 	# Demande à l'utilisateur s'il souhaite modifier des paramètres
 	tput bold; read -p 'Voulez-vous changer des paramètres ? [O/N]'$'\n> ' PARAM; tput sgr0;
@@ -124,9 +123,6 @@ else
 				read -p '> Entrez le format du fichier: ' fileFormat;;
 			'piste audio')
 				read -p '> Entrez la piste audio: ' audio;;
-			'sous-titre')
-				read -p '> Entrez la langue du/des sous-titre(s): ' subtitle;
-				;;
 			'son')
 				read -p "> Entrez l'encodage sonore: " audioEncoder;;
 			'mixage audio')
@@ -139,7 +135,7 @@ else
 			then
 				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:\tAucun\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 			else
-				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:`assign_language ${subtitle}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
+				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 			fi
 			tput bold; read -p 'Souhaitez-vous changer un autre paramètre ? [O/N]'$'\n> ' reset; tput sgr0;
 		done
