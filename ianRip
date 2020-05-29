@@ -28,7 +28,7 @@ function rip_dvd
 		then
 			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
 		else
-			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
+			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "none" --subtitle-forced "none" --two-pass 2>"${DEST}/${name}"_preview.log
 		fi
 		# On supprime le fichier de log
 		rm -f "${DEST}/${name}"_preview.log
@@ -44,7 +44,7 @@ function rip_dvd
 		then
 			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
 		else
-			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
+			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "none" --subtitle-forced "none" --two-pass 2>"${DEST}/${name}".log
 		fi
 
 		# Suppression le fichier de log
