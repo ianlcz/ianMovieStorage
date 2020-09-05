@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#######################################################################################
-#Nom du script	: ianRip                                                        
-#Description	: Ce script conçu avec la distribution Ubuntu permet de ripper des DVD.                                                                                  
-#Auteur       	: Yann Le Coz                                           
-#######################################################################################
+###############################################################################################
+#	Nom du script	: ianRip
+#	Description		: Ce script a été conçu avec la distribution Ubuntu afin de ripper des DVD.
+#	Développé par	: Yann Le Coz
+###############################################################################################
 
 # Définition et initialisation des variables
 DEV='/dev/dvd'
@@ -24,12 +24,8 @@ function rip_dvd
 	if [ $1 = true ]
 	then
 		echo -e "\nEncodage en cours, cela peut prendre quelques minutes..."
-		if [ "${audio}" = 'fre' ]
-		then
-			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
-		else
-			HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "none" --subtitle-forced "none" --two-pass 2>"${DEST}/${name}"_preview.log
-		fi
+		HandBrakeCLI -c 02 -i "${DEV}" -o "${DEST}/${name}"_preview."${fileFormat}" -E "${audioEncoder}" --subtitle "none" --subtitle-burned "none" --subtitle-default "none" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}"_preview.log
+
 		# On supprime le fichier de log
 		rm -f "${DEST}/${name}"_preview.log
 		echo -e "\nTerminé !\n"${name}"_preview.${fileFormat} est dans ${DEST}/.\n";
@@ -40,12 +36,7 @@ function rip_dvd
 		done
 	else
 		echo -e "\nEncodage en cours, cela peut prendre quelques heures..."
-		if [ "${audio}" = 'fre' ]
-		then
-			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -s 'none' -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
-		else
-			HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --subtitle-lang-list "none" --subtitle-forced "none" --two-pass 2>"${DEST}/${name}".log
-		fi
+		HandBrakeCLI -i "${DEV}" -o "${DEST}/${name}"."${fileFormat}" -E "${audioEncoder}" --subtitle "none" --subtitle-burned "none" --subtitle-default "none" -t "${titleToEncode}" --audio-lang-list "${audio}" --mixdown "${audioMixing/./point}" --preset "${preset}" --two-pass 2>"${DEST}/${name}".log
 
 		# Suppression le fichier de log
 		rm -f "${DEST}/${name}".log
@@ -131,12 +122,7 @@ else
 				echo -e '\nParamètre inconnu.\n'
 				exit 1;;
 			esac
-			if [ "${audio}" = 'fre' ]
-			then
-				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSous-titre:\tAucun\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
-			else
-				echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
-			fi
+			echo -e "\nTitre du film:\t${name}\nQualité:\t${preset}\nFormat:\t\t${fileFormat}\nPiste audio:`assign_language ${audio}`\nSon:\t\t${audioEncoder/copy:/}\nMixage audio:\t${audioMixing/point/.}\n"
 			tput bold; read -p 'Souhaitez-vous changer un autre paramètre ? [O/N]'$'\n> ' reset; tput sgr0;
 		done
 	elif [ "${PARAM^^}" != 'O' ] && [ "${PARAM^^}" != 'N' ]
